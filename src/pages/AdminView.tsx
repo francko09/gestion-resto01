@@ -1,14 +1,31 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, X, FileText, Printer, Calendar, ChevronDown, QrCode, Download } from 'lucide-react';
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  X,
+  FileText,
+  Printer,
+  Calendar,
+  ChevronDown,
+  QrCode,
+  Download,
+} from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Dish, Order, SupabaseOrder, SupabaseOrderItem } from '../types';
 import { supabase } from '../lib/supabase';
+
+interface Category {
+  id: string;
+  name: string;
+  label: string;
+}
 
 interface DishFormData {
   name: string;
   description: string;
   price: number;
-  category: string;
+  category_id: string;
   imageUrl: string;
 }
 
@@ -16,7 +33,7 @@ const initialFormData: DishFormData = {
   name: '',
   description: '',
   price: 0,
-  category: 'Main Course',
+  category_id: '',
   imageUrl: '',
 };
 
@@ -25,10 +42,27 @@ interface EditDishModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (dish: DishFormData) => void;
+  categories: Category[];
 }
 
-function EditDishModal({ dish, isOpen, onClose, onSave }: EditDishModalProps) {
-  const [formData, setFormData] = useState<DishFormData>(dish || initialFormData);
+function EditDishModal({
+  dish,
+  isOpen,
+  onClose,
+  onSave,
+  categories,
+}: EditDishModalProps) {
+  const [formData, setFormData] = useState<DishFormData>(
+    dish
+      ? {
+          name: dish.name,
+          description: dish.description,
+          price: dish.price,
+          category_id: dish.category_id || '',
+          imageUrl: dish.imageUrl,
+        }
+      : initialFormData
+  );
 
   useEffect(() => {
     if (dish) {
@@ -36,7 +70,7 @@ function EditDishModal({ dish, isOpen, onClose, onSave }: EditDishModalProps) {
         name: dish.name,
         description: dish.description,
         price: dish.price,
-        category: dish.category,
+        category_id: dish.category_id || '',
         imageUrl: dish.imageUrl,
       });
     } else {
@@ -59,18 +93,25 @@ function EditDishModal({ dish, isOpen, onClose, onSave }: EditDishModalProps) {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             {dish ? 'Modifier le plat' : 'Ajouter un plat'}
           </h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+          >
             <X className="h-5 w-5 text-gray-600 dark:text-gray-300" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Nom
+            </label>
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 
                        shadow-sm focus:border-blue-500 focus:ring-blue-500 
                        bg-white dark:bg-gray-700 text-gray-900 dark:text-white
@@ -80,10 +121,14 @@ function EditDishModal({ dish, isOpen, onClose, onSave }: EditDishModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Description
+            </label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 
                        shadow-sm focus:border-blue-500 focus:ring-blue-500 
                        bg-white dark:bg-gray-700 text-gray-900 dark:text-white
@@ -94,12 +139,16 @@ function EditDishModal({ dish, isOpen, onClose, onSave }: EditDishModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Prix (€)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Prix (€)
+            </label>
             <input
               type="number"
               step="0.01"
               value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+              onChange={(e) =>
+                setFormData({ ...formData, price: parseFloat(e.target.value) })
+              }
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 
                        shadow-sm focus:border-blue-500 focus:ring-blue-500 
                        bg-white dark:bg-gray-700 text-gray-900 dark:text-white
@@ -109,28 +158,36 @@ function EditDishModal({ dish, isOpen, onClose, onSave }: EditDishModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Catégorie</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Catégorie
+            </label>
             <select
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 
-                       shadow-sm focus:border-blue-500 focus:ring-blue-500 
-                       bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                       transition-colors duration-200"
+              value={formData.category_id}
+              onChange={(e) =>
+                setFormData({ ...formData, category_id: e.target.value })
+              }
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              required
             >
-              <option value="Main Course">Plat Principal</option>
-              <option value="Starter">Entrée</option>
-              <option value="Dessert">Dessert</option>
-              <option value="Beverage">Boisson</option>
+              <option value="">Sélectionner une catégorie</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.label}
+                </option>
+              ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">URL de l'image</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              URL de l'image
+            </label>
             <input
               type="url"
               value={formData.imageUrl}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, imageUrl: e.target.value })
+              }
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 
                        shadow-sm focus:border-blue-500 focus:ring-blue-500 
                        bg-white dark:bg-gray-700 text-gray-900 dark:text-white
@@ -168,27 +225,35 @@ interface ReportData {
   totalRevenue: number;
   ordersByCategory: Record<string, number>;
   popularDishes: Array<{ name: string; quantity: number; revenue: number }>;
-  ordersByDate: Record<string, { orders: Order[]; totalRevenue: number; totalOrders: number }>;
+  ordersByDate: Record<
+    string,
+    { orders: Order[]; totalRevenue: number; totalOrders: number }
+  >;
 }
 
 interface OrderStats {
   totalRevenue: number;
-  dishStats: Record<string, {
-    quantity: number;
-    revenue: number;
-  }>;
+  dishStats: Record<
+    string,
+    {
+      quantity: number;
+      revenue: number;
+    }
+  >;
   ordersByCategory: Record<string, number>;
 }
 
 const categoryNames: Record<string, string> = {
   'Main Course': 'Plat Principal',
-  'Starter': 'Entrée',
-  'Dessert': 'Dessert',
-  'Beverage': 'Boisson'
+  Starter: 'Entrée',
+  Dessert: 'Dessert',
+  Beverage: 'Boisson',
 };
 
 function ReportSection() {
-  const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly' | 'custom'>('daily');
+  const [reportType, setReportType] = useState<
+    'daily' | 'weekly' | 'monthly' | 'custom'
+  >('daily');
   const [customStartDate, setCustomStartDate] = useState<string>(() => {
     const today = new Date();
     return today.toISOString().split('T')[0];
@@ -208,7 +273,7 @@ function ReportSection() {
     try {
       setLoading(true);
       setError(null);
-      
+
       let startDate: Date;
       let endDate: Date;
 
@@ -216,50 +281,80 @@ function ReportSection() {
       switch (reportType) {
         case 'daily':
           startDate = new Date();
-          startDate = new Date(Date.UTC(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            startDate.getDate(),
-            0, 0, 0, 0
-          ));
-          endDate = new Date(Date.UTC(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            startDate.getDate(),
-            23, 59, 59, 999
-          ));
+          startDate = new Date(
+            Date.UTC(
+              startDate.getFullYear(),
+              startDate.getMonth(),
+              startDate.getDate(),
+              0,
+              0,
+              0,
+              0
+            )
+          );
+          endDate = new Date(
+            Date.UTC(
+              startDate.getFullYear(),
+              startDate.getMonth(),
+              startDate.getDate(),
+              23,
+              59,
+              59,
+              999
+            )
+          );
           break;
-        
+
         case 'monthly':
           startDate = new Date();
-          startDate = new Date(Date.UTC(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            1,
-            0, 0, 0, 0
-          ));
-          endDate = new Date(Date.UTC(
-            startDate.getFullYear(),
-            startDate.getMonth() + 1,
-            0,
-            23, 59, 59, 999
-          ));
+          startDate = new Date(
+            Date.UTC(
+              startDate.getFullYear(),
+              startDate.getMonth(),
+              1,
+              0,
+              0,
+              0,
+              0
+            )
+          );
+          endDate = new Date(
+            Date.UTC(
+              startDate.getFullYear(),
+              startDate.getMonth() + 1,
+              0,
+              23,
+              59,
+              59,
+              999
+            )
+          );
           break;
 
         case 'weekly':
           startDate = new Date();
-          startDate = new Date(Date.UTC(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            startDate.getDate() - 6,
-            0, 0, 0, 0
-          ));
-          endDate = new Date(Date.UTC(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            startDate.getDate() + 6,
-            23, 59, 59, 999
-          ));
+          startDate = new Date(
+            Date.UTC(
+              startDate.getFullYear(),
+              startDate.getMonth(),
+              startDate.getDate() - 6,
+              0,
+              0,
+              0,
+              0
+            )
+          );
+          endDate = new Date(
+            Date.UTC(
+              startDate.getFullYear(),
+              startDate.getMonth(),
+              startDate.getDate() + 6,
+              23,
+              59,
+              59,
+              999
+            )
+          );
           break;
 
         case 'custom':
@@ -269,19 +364,29 @@ function ReportSection() {
             return;
           }
           startDate = new Date(customStartDate);
-          startDate = new Date(Date.UTC(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            startDate.getDate(),
-            0, 0, 0, 0
-          ));
+          startDate = new Date(
+            Date.UTC(
+              startDate.getFullYear(),
+              startDate.getMonth(),
+              startDate.getDate(),
+              0,
+              0,
+              0,
+              0
+            )
+          );
           endDate = new Date(customEndDate);
-          endDate = new Date(Date.UTC(
-            endDate.getFullYear(),
-            endDate.getMonth(),
-            endDate.getDate(),
-            23, 59, 59, 999
-          ));
+          endDate = new Date(
+            Date.UTC(
+              endDate.getFullYear(),
+              endDate.getMonth(),
+              endDate.getDate(),
+              23,
+              59,
+              59,
+              999
+            )
+          );
           break;
       }
 
@@ -290,13 +395,15 @@ function ReportSection() {
 
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
-        .select(`
+        .select(
+          `
           *,
           order_items:order_items (
             *,
             dish:dishes (*)
           )
-        `)
+        `
+        )
         .eq('status', 'served')
         .gte('created_at', startDateUTC)
         .lte('created_at', endDateUTC)
@@ -310,7 +417,7 @@ function ReportSection() {
         throw new Error('Aucune donnée reçue');
       }
 
-      const formattedOrders = (ordersData as SupabaseOrder[]).map(order => ({
+      const formattedOrders = (ordersData as SupabaseOrder[]).map((order) => ({
         id: order.id,
         tableNumber: order.table_number,
         status: order.status,
@@ -324,9 +431,9 @@ function ReportSection() {
             description: item.dish.description,
             price: item.price_at_time || item.dish.price,
             category: item.dish.category,
-            imageUrl: item.dish.image_url
-          }
-        }))
+            imageUrl: item.dish.image_url,
+          },
+        })),
       }));
 
       setOrders(formattedOrders);
@@ -338,90 +445,98 @@ function ReportSection() {
     }
   };
 
-  const generateReportData = useCallback(async (servedOrders: Order[] = orders) => {
-    try {
-      setLoading(true);
+  const generateReportData = useCallback(
+    async (servedOrders: Order[] = orders) => {
+      try {
+        setLoading(true);
 
-      if (servedOrders.length === 0) {
-        setReport({
-          totalOrders: 0,
-          totalRevenue: 0,
-          ordersByCategory: {},
-          popularDishes: [],
-          ordersByDate: {}
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Grouper les commandes par date
-      const ordersByDate = servedOrders.reduce((acc, order) => {
-        const date = order.timestamp.toLocaleDateString('fr-FR', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
-        
-        if (!acc[date]) {
-          acc[date] = {
-            orders: [],
+        if (servedOrders.length === 0) {
+          setReport({
+            totalOrders: 0,
             totalRevenue: 0,
-            totalOrders: 0
-          };
+            ordersByCategory: {},
+            popularDishes: [],
+            ordersByDate: {},
+          });
+          setLoading(false);
+          return;
         }
-        
-        acc[date].orders.push(order);
-        acc[date].totalRevenue += order.total;
-        acc[date].totalOrders += 1;
-        
-        return acc;
-      }, {} as Record<string, { orders: Order[], totalRevenue: number, totalOrders: number }>);
 
-      const stats = servedOrders.reduce<OrderStats>((acc, order) => {
-        order.items.forEach(item => {
-          const dishKey = item.dish.name;
-          if (!acc.dishStats[dishKey]) {
-            acc.dishStats[dishKey] = { quantity: 0, revenue: 0 };
+        // Grouper les commandes par date
+        const ordersByDate = servedOrders.reduce((acc, order) => {
+          const date = order.timestamp.toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+
+          if (!acc[date]) {
+            acc[date] = {
+              orders: [],
+              totalRevenue: 0,
+              totalOrders: 0,
+            };
           }
-          acc.dishStats[dishKey].quantity += item.quantity;
-          const itemRevenue = item.quantity * item.dish.price;
-          acc.dishStats[dishKey].revenue += itemRevenue;
-          acc.totalRevenue += itemRevenue;
 
-          const categoryName = categoryNames[item.dish.category] || item.dish.category;
-          acc.ordersByCategory[categoryName] = (acc.ordersByCategory[categoryName] || 0) + item.quantity;
-        });
-        return acc;
-      }, {
-        totalRevenue: 0,
-        dishStats: {},
-        ordersByCategory: {}
-      });
+          acc[date].orders.push(order);
+          acc[date].totalRevenue += order.total;
+          acc[date].totalOrders += 1;
 
-      const popularDishes = Object.entries(stats.dishStats)
-        .map(([name, stats]) => ({
-          name,
-          quantity: stats.quantity,
-          revenue: stats.revenue
-        }))
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 5);
+          return acc;
+        }, {} as Record<string, { orders: Order[]; totalRevenue: number; totalOrders: number }>);
 
-      const newReport = {
-        totalOrders: servedOrders.length,
-        totalRevenue: stats.totalRevenue,
-        ordersByCategory: stats.ordersByCategory,
-        popularDishes,
-        ordersByDate
-      };
+        const stats = servedOrders.reduce<OrderStats>(
+          (acc, order) => {
+            order.items.forEach((item) => {
+              const dishKey = item.dish.name;
+              if (!acc.dishStats[dishKey]) {
+                acc.dishStats[dishKey] = { quantity: 0, revenue: 0 };
+              }
+              acc.dishStats[dishKey].quantity += item.quantity;
+              const itemRevenue = item.quantity * item.dish.price;
+              acc.dishStats[dishKey].revenue += itemRevenue;
+              acc.totalRevenue += itemRevenue;
 
-      setReport(newReport);
-      setLoading(false);
-    } catch (error) {
-      setError('Une erreur est survenue lors de la génération du rapport.');
-      setLoading(false);
-    }
-  }, []);
+              const categoryName =
+                categoryNames[item.dish.category] || item.dish.category;
+              acc.ordersByCategory[categoryName] =
+                (acc.ordersByCategory[categoryName] || 0) + item.quantity;
+            });
+            return acc;
+          },
+          {
+            totalRevenue: 0,
+            dishStats: {},
+            ordersByCategory: {},
+          }
+        );
+
+        const popularDishes = Object.entries(stats.dishStats)
+          .map(([name, stats]) => ({
+            name,
+            quantity: stats.quantity,
+            revenue: stats.revenue,
+          }))
+          .sort((a, b) => b.quantity - a.quantity)
+          .slice(0, 5);
+
+        const newReport = {
+          totalOrders: servedOrders.length,
+          totalRevenue: stats.totalRevenue,
+          ordersByCategory: stats.ordersByCategory,
+          popularDishes,
+          ordersByDate,
+        };
+
+        setReport(newReport);
+        setLoading(false);
+      } catch (error) {
+        setError('Une erreur est survenue lors de la génération du rapport.');
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (reportType !== 'custom') {
@@ -440,15 +555,17 @@ function ReportSection() {
   useEffect(() => {
     const ordersSubscription = supabase
       .channel('orders-channel')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'orders'
-        }, 
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+        },
         async (payload) => {
           if (
-            (payload.eventType === 'UPDATE' && payload.new.status === 'served') ||
+            (payload.eventType === 'UPDATE' &&
+              payload.new.status === 'served') ||
             payload.eventType === 'INSERT' ||
             payload.eventType === 'DELETE'
           ) {
@@ -476,14 +593,16 @@ function ReportSection() {
         startDate.setHours(0, 0, 0, 0);
         endDate.setHours(23, 59, 59, 999);
         break;
-      
+
       case 'weekly':
-        startDate.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+        startDate.setDate(
+          now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1)
+        );
         endDate.setDate(startDate.getDate() + 6);
         startDate.setHours(0, 0, 0, 0);
         endDate.setHours(23, 59, 59, 999);
         break;
-      
+
       case 'monthly':
         startDate.setDate(1);
         startDate.setHours(0, 0, 0, 0);
@@ -498,7 +617,7 @@ function ReportSection() {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
       });
     };
 
@@ -578,12 +697,19 @@ function ReportSection() {
           
           <div class="section">
             <h2>Résumé des Ventes</h2>
-            <p class="total">Nombre total de commandes: ${report.totalOrders}</p>
-            <p class="total">Chiffre d'affaires total: ${new Intl.NumberFormat('fr-FR', {
-              style: 'currency',
-              currency: 'XOF',
-              currencyDisplay: 'narrowSymbol'
-            }).format(report.totalRevenue).replace('XOF', 'Fr')}</p>
+            <p class="total">Nombre total de commandes: ${
+              report.totalOrders
+            }</p>
+            <p class="total">Chiffre d'affaires total: ${new Intl.NumberFormat(
+              'fr-FR',
+              {
+                style: 'currency',
+                currency: 'XOF',
+                currencyDisplay: 'narrowSymbol',
+              }
+            )
+              .format(report.totalRevenue)
+              .replace('XOF', 'Fr')}</p>
           </div>
 
           <div class="section">
@@ -598,18 +724,26 @@ function ReportSection() {
                 </tr>
               </thead>
               <tbody>
-                ${report.popularDishes.map(dish => `
+                ${report.popularDishes
+                  .map(
+                    (dish) => `
                   <tr>
                     <td>${dish.name}</td>
                     <td>${dish.quantity}</td>
                     <td>${new Intl.NumberFormat('fr-FR', {
                       style: 'currency',
                       currency: 'XOF',
-                      currencyDisplay: 'narrowSymbol'
-                    }).format(dish.revenue).replace('XOF', 'Fr')}</td>
-                    <td>${((dish.revenue / report.totalRevenue) * 100).toFixed(1)}%</td>
+                      currencyDisplay: 'narrowSymbol',
+                    })
+                      .format(dish.revenue)
+                      .replace('XOF', 'Fr')}</td>
+                    <td>${((dish.revenue / report.totalRevenue) * 100).toFixed(
+                      1
+                    )}%</td>
                   </tr>
-                `).join('')}
+                `
+                  )
+                  .join('')}
               </tbody>
             </table>
           </div>
@@ -625,20 +759,33 @@ function ReportSection() {
                 </tr>
               </thead>
               <tbody>
-                ${Object.entries(report.ordersByCategory).map(([category, quantity]) => `
+                ${Object.entries(report.ordersByCategory)
+                  .map(
+                    ([category, quantity]) => `
                   <tr>
                     <td>${category}</td>
                     <td>${quantity}</td>
-                    <td>${((quantity / Object.values(report.ordersByCategory).reduce((a, b) => a + b, 0)) * 100).toFixed(1)}%</td>
+                    <td>${(
+                      (quantity /
+                        Object.values(report.ordersByCategory).reduce(
+                          (a, b) => a + b,
+                          0
+                        )) *
+                      100
+                    ).toFixed(1)}%</td>
                   </tr>
-                `).join('')}
+                `
+                  )
+                  .join('')}
               </tbody>
             </table>
           </div>
 
           <div class="section">
             <h2>Informations Complémentaires</h2>
-            <p>Rapport généré le ${formatDate(now)} à ${now.toLocaleTimeString('fr-FR')}</p>
+            <p>Rapport généré le ${formatDate(now)} à ${now.toLocaleTimeString(
+      'fr-FR'
+    )}</p>
           </div>
         </body>
       </html>
@@ -651,7 +798,7 @@ function ReportSection() {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-      <div 
+      <div
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
@@ -659,7 +806,7 @@ function ReportSection() {
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
             Rapports et Statistiques
           </h3>
-          <ChevronDown 
+          <ChevronDown
             className={`ml-2 h-5 w-5 text-gray-500 transform transition-transform duration-200 ${
               isExpanded ? 'rotate-180' : ''
             }`}
@@ -667,7 +814,11 @@ function ReportSection() {
         </div>
       </div>
 
-      <div className={`mt-6 transition-all duration-200 ${isExpanded ? 'block' : 'hidden'}`}>
+      <div
+        className={`mt-6 transition-all duration-200 ${
+          isExpanded ? 'block' : 'hidden'
+        }`}
+      >
         {error ? (
           <div className="text-red-600 dark:text-red-400 mb-4 p-3 bg-red-100 dark:bg-red-900 rounded-lg">
             {error}
@@ -680,7 +831,10 @@ function ReportSection() {
           <>
             <div className="flex flex-wrap gap-3 mb-6">
               <div className="flex-1 min-w-[200px]">
-                <label htmlFor="reportType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label
+                  htmlFor="reportType"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
                   Type de Rapport
                 </label>
                 <div className="relative">
@@ -688,7 +842,13 @@ function ReportSection() {
                     id="reportType"
                     value={reportType}
                     onChange={(e) => {
-                      setReportType(e.target.value as 'daily' | 'weekly' | 'monthly' | 'custom');
+                      setReportType(
+                        e.target.value as
+                          | 'daily'
+                          | 'weekly'
+                          | 'monthly'
+                          | 'custom'
+                      );
                       if (e.target.value !== 'custom') {
                         loadOrders();
                       }
@@ -698,9 +858,15 @@ function ReportSection() {
                              focus:border-blue-500 block w-full p-2.5 pr-8"
                     disabled={loading}
                   >
-                    <option value="daily">Rapport Journalier (aujourd'hui)</option>
-                    <option value="weekly">Rapport Hebdomadaire (7 derniers jours)</option>
-                    <option value="monthly">Rapport Mensuel (mois en cours)</option>
+                    <option value="daily">
+                      Rapport Journalier (aujourd'hui)
+                    </option>
+                    <option value="weekly">
+                      Rapport Hebdomadaire (7 derniers jours)
+                    </option>
+                    <option value="monthly">
+                      Rapport Mensuel (mois en cours)
+                    </option>
                     <option value="custom">Période Personnalisée</option>
                   </select>
                   <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500 dark:text-gray-400" />
@@ -711,11 +877,18 @@ function ReportSection() {
                 <div className="flex-1 min-w-[300px]">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Sélectionner la Période
-                    <span className="text-sm text-gray-500 ml-2">(Les deux dates sont requises)</span>
+                    <span className="text-sm text-gray-500 ml-2">
+                      (Les deux dates sont requises)
+                    </span>
                   </label>
                   <div className="flex gap-2 items-center">
                     <div className="flex-1">
-                      <label htmlFor="startDate" className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Date de début</label>
+                      <label
+                        htmlFor="startDate"
+                        className="block text-sm text-gray-600 dark:text-gray-400 mb-1"
+                      >
+                        Date de début
+                      </label>
                       <input
                         id="startDate"
                         type="date"
@@ -730,9 +903,16 @@ function ReportSection() {
                         max={customEndDate || undefined}
                       />
                     </div>
-                    <span className="text-gray-500 dark:text-gray-400 pt-6">à</span>
+                    <span className="text-gray-500 dark:text-gray-400 pt-6">
+                      à
+                    </span>
                     <div className="flex-1">
-                      <label htmlFor="endDate" className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Date de fin</label>
+                      <label
+                        htmlFor="endDate"
+                        className="block text-sm text-gray-600 dark:text-gray-400 mb-1"
+                      >
+                        Date de fin
+                      </label>
                       <input
                         id="endDate"
                         type="date"
@@ -748,15 +928,16 @@ function ReportSection() {
                       />
                     </div>
                   </div>
-                  {(reportType === 'custom' && (!customStartDate || !customEndDate)) && (
-                    <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">
-                      {!customStartDate && !customEndDate 
-                        ? "Veuillez sélectionner une date de début et une date de fin"
-                        : !customStartDate 
-                          ? "Veuillez sélectionner une date de début"
-                          : "Veuillez sélectionner une date de fin"}
-                    </p>
-                  )}
+                  {reportType === 'custom' &&
+                    (!customStartDate || !customEndDate) && (
+                      <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">
+                        {!customStartDate && !customEndDate
+                          ? 'Veuillez sélectionner une date de début et une date de fin'
+                          : !customStartDate
+                          ? 'Veuillez sélectionner une date de début'
+                          : 'Veuillez sélectionner une date de fin'}
+                      </p>
+                    )}
                 </div>
               )}
 
@@ -766,7 +947,11 @@ function ReportSection() {
                     e.stopPropagation();
                     loadOrders();
                   }}
-                  disabled={loading || (reportType === 'custom' && (!customStartDate || !customEndDate))}
+                  disabled={
+                    loading ||
+                    (reportType === 'custom' &&
+                      (!customStartDate || !customEndDate))
+                  }
                   className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md 
                            hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed h-[42px]"
                 >
@@ -809,8 +994,10 @@ function ReportSection() {
                       {new Intl.NumberFormat('fr-FR', {
                         style: 'currency',
                         currency: 'XOF',
-                        currencyDisplay: 'narrowSymbol'
-                      }).format(report.totalRevenue).replace('XOF', 'Fr')}
+                        currencyDisplay: 'narrowSymbol',
+                      })
+                        .format(report.totalRevenue)
+                        .replace('XOF', 'Fr')}
                     </p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
@@ -829,10 +1016,12 @@ function ReportSection() {
                       Commandes par Date
                     </h4>
                     <button
-                      onClick={() => setIsOrdersByDateExpanded(!isOrdersByDateExpanded)}
+                      onClick={() =>
+                        setIsOrdersByDateExpanded(!isOrdersByDateExpanded)
+                      }
                       className="flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                     >
-                      <ChevronDown 
+                      <ChevronDown
                         className={`h-5 w-5 transform transition-transform duration-200 ${
                           isOrdersByDateExpanded ? 'rotate-180' : ''
                         }`}
@@ -842,55 +1031,87 @@ function ReportSection() {
                       </span>
                     </button>
                   </div>
-                  <div className={`space-y-6 transition-all duration-200 ${isOrdersByDateExpanded ? 'block' : 'hidden'}`}>
+                  <div
+                    className={`space-y-6 transition-all duration-200 ${
+                      isOrdersByDateExpanded ? 'block' : 'hidden'
+                    }`}
+                  >
                     {Object.entries(report.ordersByDate)
-                      .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
+                      .sort(
+                        ([dateA], [dateB]) =>
+                          new Date(dateB).getTime() - new Date(dateA).getTime()
+                      )
                       .map(([date, data]) => (
-                        <div key={date} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div
+                          key={date}
+                          className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4"
+                        >
                           <div className="flex justify-between items-center mb-4">
-                            <h5 className="text-lg font-medium text-gray-900 dark:text-white">{date}</h5>
+                            <h5 className="text-lg font-medium text-gray-900 dark:text-white">
+                              {date}
+                            </h5>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
-                              {data.totalOrders} commande{data.totalOrders > 1 ? 's' : ''} • 
+                              {data.totalOrders} commande
+                              {data.totalOrders > 1 ? 's' : ''} •
                               {new Intl.NumberFormat('fr-FR', {
                                 style: 'currency',
                                 currency: 'XOF',
-                                currencyDisplay: 'narrowSymbol'
-                              }).format(data.totalRevenue).replace('XOF', 'Fr')}
+                                currencyDisplay: 'narrowSymbol',
+                              })
+                                .format(data.totalRevenue)
+                                .replace('XOF', 'Fr')}
                             </div>
                           </div>
                           <div className="space-y-2">
-                            {data.orders.map(order => (
-                              <div key={order.id} className="bg-white dark:bg-gray-800 rounded p-3">
+                            {data.orders.map((order) => (
+                              <div
+                                key={order.id}
+                                className="bg-white dark:bg-gray-800 rounded p-3"
+                              >
                                 <div className="flex justify-between items-start">
                                   <div>
                                     <p className="font-medium text-gray-900 dark:text-white">
                                       Table {order.tableNumber}
                                     </p>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                                      {order.timestamp.toLocaleTimeString('fr-FR', {
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      })}
+                                      {order.timestamp.toLocaleTimeString(
+                                        'fr-FR',
+                                        {
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                        }
+                                      )}
                                     </p>
                                   </div>
                                   <p className="text-sm font-medium text-gray-900 dark:text-white">
                                     {new Intl.NumberFormat('fr-FR', {
                                       style: 'currency',
                                       currency: 'XOF',
-                                      currencyDisplay: 'narrowSymbol'
-                                    }).format(order.total).replace('XOF', 'Fr')}
+                                      currencyDisplay: 'narrowSymbol',
+                                    })
+                                      .format(order.total)
+                                      .replace('XOF', 'Fr')}
                                   </p>
                                 </div>
                                 <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                                  {order.items.map(item => (
-                                    <div key={item.dish.id} className="flex justify-between">
-                                      <span>{item.quantity}x {item.dish.name}</span>
+                                  {order.items.map((item) => (
+                                    <div
+                                      key={item.dish.id}
+                                      className="flex justify-between"
+                                    >
+                                      <span>
+                                        {item.quantity}x {item.dish.name}
+                                      </span>
                                       <span>
                                         {new Intl.NumberFormat('fr-FR', {
                                           style: 'currency',
                                           currency: 'XOF',
-                                          currencyDisplay: 'narrowSymbol'
-                                        }).format(item.dish.price * item.quantity).replace('XOF', 'Fr')}
+                                          currencyDisplay: 'narrowSymbol',
+                                        })
+                                          .format(
+                                            item.dish.price * item.quantity
+                                          )
+                                          .replace('XOF', 'Fr')}
                                       </span>
                                     </div>
                                   ))}
@@ -936,8 +1157,10 @@ function ReportSection() {
                                 {new Intl.NumberFormat('fr-FR', {
                                   style: 'currency',
                                   currency: 'XOF',
-                                  currencyDisplay: 'narrowSymbol'
-                                }).format(dish.revenue).replace('XOF', 'Fr')}
+                                  currencyDisplay: 'narrowSymbol',
+                                })
+                                  .format(dish.revenue)
+                                  .replace('XOF', 'Fr')}
                               </td>
                             </tr>
                           ))}
@@ -963,16 +1186,18 @@ function ReportSection() {
                           </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
-                          {Object.entries(report.ordersByCategory).map(([category, quantity], index) => (
-                            <tr key={index}>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                {category}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {quantity}
-                              </td>
-                            </tr>
-                          ))}
+                          {Object.entries(report.ordersByCategory).map(
+                            ([category, quantity], index) => (
+                              <tr key={index}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                  {category}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                  {quantity}
+                                </td>
+                              </tr>
+                            )
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -999,26 +1224,26 @@ function QRCodeSection() {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
-      
+
       img.onload = () => {
         canvas.width = qrSize;
         canvas.height = qrSize;
         ctx?.drawImage(img, 0, 0);
         const pngFile = canvas.toDataURL('image/png');
-        
+
         const downloadLink = document.createElement('a');
         downloadLink.download = 'qrcode.png';
         downloadLink.href = pngFile;
         downloadLink.click();
       };
-      
+
       img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
     }
   };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-      <div 
+      <div
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
@@ -1027,7 +1252,7 @@ function QRCodeSection() {
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
             Générateur de QR Code
           </h3>
-          <ChevronDown 
+          <ChevronDown
             className={`ml-2 h-5 w-5 text-gray-500 transform transition-transform duration-200 ${
               isExpanded ? 'rotate-180' : ''
             }`}
@@ -1035,7 +1260,11 @@ function QRCodeSection() {
         </div>
       </div>
 
-      <div className={`mt-6 transition-all duration-200 ${isExpanded ? 'block' : 'hidden'}`}>
+      <div
+        className={`mt-6 transition-all duration-200 ${
+          isExpanded ? 'block' : 'hidden'
+        }`}
+      >
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1099,6 +1328,7 @@ function QRCodeSection() {
 
 export function AdminView() {
   const [dishes, setDishes] = useState<Dish[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDish, setEditingDish] = useState<Dish | undefined>();
   const [isLoading, setIsLoading] = useState(true);
@@ -1110,45 +1340,55 @@ export function AdminView() {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         const { data, error } = await supabase
           .from('dishes')
           .select('*')
           .order('name');
-        
+
         if (error) {
           throw error;
         }
-        
+
         // Transformer les données pour correspondre à notre format Dish
-        const formattedDishes: Dish[] = data.map(dish => ({
+        const formattedDishes: Dish[] = data.map((dish) => ({
           id: dish.id,
           name: dish.name,
           description: dish.description,
           price: dish.price,
-          category: dish.category,
-          imageUrl: dish.image_url
+          category_id: dish.category_id,
+          imageUrl: dish.image_url,
         }));
-        
+
         setDishes(formattedDishes);
-        
+
         // Mettre à jour le localStorage pour la compatibilité avec le reste de l'application
         localStorage.setItem('dishes', JSON.stringify(formattedDishes));
       } catch (err) {
         console.error('Erreur lors du chargement des plats:', err);
-        setError('Impossible de charger les plats. Veuillez réessayer plus tard.');
+        setError(
+          'Impossible de charger les plats. Veuillez réessayer plus tard.'
+        );
       } finally {
         setIsLoading(false);
       }
     }
-    
+
     fetchDishes();
+  }, []);
+
+  // Charger les catégories
+  useEffect(() => {
+    supabase
+      .from('categories')
+      .select('*')
+      .then(({ data }) => setCategories(data ?? []));
   }, []);
 
   const handleAddDish = async (formData: DishFormData) => {
     try {
       setError(null);
-      
+
       // Insérer le plat dans Supabase
       const { data, error } = await supabase
         .from('dishes')
@@ -1156,45 +1396,44 @@ export function AdminView() {
           name: formData.name,
           description: formData.description,
           price: formData.price,
-          category: formData.category,
-          image_url: formData.imageUrl
+          category_id: formData.category_id,
+          image_url: formData.imageUrl,
         })
         .select()
         .single();
-      
+
       if (error) {
         throw error;
       }
-      
+
       // Créer un nouvel objet Dish avec les données retournées
       const newDish: Dish = {
         id: data.id,
         name: data.name,
         description: data.description,
         price: data.price,
-        category: data.category,
-        imageUrl: data.image_url
+        category_id: data.category_id,
+        imageUrl: data.image_url,
       };
-      
+
       // Mettre à jour l'état local
       const updatedDishes = [...dishes, newDish];
       setDishes(updatedDishes);
-      
+
       // Mettre à jour le localStorage
       localStorage.setItem('dishes', JSON.stringify(updatedDishes));
-      
     } catch (err) {
-      console.error('Erreur lors de l\'ajout du plat:', err);
-      setError('Impossible d\'ajouter le plat. Veuillez réessayer plus tard.');
+      console.error("Erreur lors de l'ajout du plat:", err);
+      setError("Impossible d'ajouter le plat. Veuillez réessayer plus tard.");
     }
   };
 
   const handleEditDish = async (formData: DishFormData) => {
     if (!editingDish) return;
-    
+
     try {
       setError(null);
-      
+
       // Mettre à jour le plat dans Supabase
       const { error } = await supabase
         .from('dishes')
@@ -1202,35 +1441,34 @@ export function AdminView() {
           name: formData.name,
           description: formData.description,
           price: formData.price,
-          category: formData.category,
+          category_id: formData.category_id,
           image_url: formData.imageUrl,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', editingDish.id);
-      
+
       if (error) {
         throw error;
       }
-      
+
       // Mettre à jour l'état local
       const updatedDishes = dishes.map((dish) =>
-        dish.id === editingDish.id 
-          ? { 
-              ...dish, 
+        dish.id === editingDish.id
+          ? {
+              ...dish,
               name: formData.name,
               description: formData.description,
               price: formData.price,
-              category: formData.category,
-              imageUrl: formData.imageUrl
-            } 
+              category_id: formData.category_id,
+              imageUrl: formData.imageUrl,
+            }
           : dish
       );
-      
+
       setDishes(updatedDishes);
-      
+
       // Mettre à jour le localStorage
       localStorage.setItem('dishes', JSON.stringify(updatedDishes));
-      
     } catch (err) {
       console.error('Erreur lors de la modification du plat:', err);
       setError('Impossible de modifier le plat. Veuillez réessayer plus tard.');
@@ -1241,27 +1479,25 @@ export function AdminView() {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce plat ?')) {
       try {
         setError(null);
-        
+
         // Supprimer le plat de Supabase
-        const { error } = await supabase
-          .from('dishes')
-          .delete()
-          .eq('id', id);
-        
+        const { error } = await supabase.from('dishes').delete().eq('id', id);
+
         if (error) {
           throw error;
         }
-        
+
         // Mettre à jour l'état local
         const updatedDishes = dishes.filter((dish) => dish.id !== id);
         setDishes(updatedDishes);
-        
+
         // Mettre à jour le localStorage
         localStorage.setItem('dishes', JSON.stringify(updatedDishes));
-        
       } catch (err) {
         console.error('Erreur lors de la suppression du plat:', err);
-        setError('Impossible de supprimer le plat. Veuillez réessayer plus tard.');
+        setError(
+          'Impossible de supprimer le plat. Veuillez réessayer plus tard.'
+        );
       }
     }
   };
@@ -1275,9 +1511,11 @@ export function AdminView() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <ReportSection />
       <QRCodeSection />
-      
+
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Gestion du Menu</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Gestion du Menu
+        </h2>
         <button
           onClick={() => openEditModal()}
           className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
@@ -1288,7 +1526,10 @@ export function AdminView() {
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+          role="alert"
+        >
           <span className="block sm:inline">{error}</span>
         </div>
       )}
@@ -1299,13 +1540,18 @@ export function AdminView() {
         </div>
       ) : dishes.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-md p-6 text-center transition-colors duration-200">
-          <p className="text-gray-500 dark:text-gray-400">Aucun plat disponible. Ajoutez votre premier plat !</p>
+          <p className="text-gray-500 dark:text-gray-400">
+            Aucun plat disponible. Ajoutez votre premier plat !
+          </p>
         </div>
       ) : (
         <div className="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-md transition-colors duration-200">
           <ul className="divide-y divide-gray-200 dark:divide-gray-700">
             {dishes.map((dish) => (
-              <li key={dish.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+              <li
+                key={dish.id}
+                className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <img
@@ -1314,17 +1560,22 @@ export function AdminView() {
                       className="h-16 w-16 object-cover rounded"
                     />
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">{dish.name}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{dish.description}</p>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                        {dish.name}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {dish.description}
+                      </p>
                       <div className="mt-1">
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
                           {new Intl.NumberFormat('fr-FR', {
                             style: 'currency',
                             currency: 'XOF',
-                            currencyDisplay: 'narrowSymbol'
-                          }).format(dish.price).replace('XOF', 'Fr')}
+                            currencyDisplay: 'narrowSymbol',
+                          })
+                            .format(dish.price)
+                            .replace('XOF', 'Fr')}
                         </span>
-                        <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">• {dish.category}</span>
                       </div>
                     </div>
                   </div>
@@ -1357,6 +1608,7 @@ export function AdminView() {
           setEditingDish(undefined);
         }}
         onSave={editingDish ? handleEditDish : handleAddDish}
+        categories={categories}
       />
     </div>
   );

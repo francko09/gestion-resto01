@@ -3,8 +3,9 @@ export interface Dish {
   name: string;
   description: string;
   price: number;
-  category: string;
+  category_id: string;
   imageUrl: string;
+  category?: string;
 }
 
 export interface CartItem {
