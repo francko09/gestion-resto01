@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bol -->
+  <path d="M42 24C42 32.2843 35.2843 39 27 39H21C12.7157 39 6 32.2843 6 24C6 15.7157 12.7157 9 21 9H27C35.2843 9 42 15.7157 42 24Z" fill="#E5E7EB"/>
+  <path d="M39 24C39 30.6274 33.6274 36 27 36H21C14.3726 36 9 30.6274 9 24C9 17.3726 14.3726 12 21 12H27C33.6274 12 39 17.3726 39 24Z" fill="#F87171"/>
+  
+  <!-- Contenu du bol -->
+  <circle cx="24" cy="21" r="9" fill="#FCD34D"/>
+  <circle cx="19.5" cy="24" r="3" fill="#34D399"/>
+  <circle cx="28.5" cy="24" r="3" fill="#34D399"/>
+  <circle cx="24" cy="27" r="3" fill="#34D399"/>
+  
+  <!-- Baguettes -->
+  <path d="M33 12L36 9" stroke="#4B5563" stroke-width="3" stroke-linecap="round"/>
+  <path d="M30 13.5L33 10.5" stroke="#4B5563" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Vapeur -->
+  <path d="M21 6C21 6 19.5 4.5 19.5 3" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M24 7.5C24 7.5 24 4.5 24 3" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M27 6C27 6 28.5 4.5 28.5 3" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round"/>
+</svg> 
